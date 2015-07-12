@@ -1,5 +1,6 @@
 
-# WSEXEC : web-server REST (flask) permettant le lancement de scripts par ssh (paramiko)
+# WSEXEC
+## web-server REST (flask) permettant le lancement de scripts par ssh (paramiko)
 
 ## Requêtes
 
@@ -9,7 +10,6 @@
     | GET       | http://[hostname]/wsexec/tasks/[task_id]              | Récupération d'une tache                      |
     | POST      | http://[hostname]/wsexec/tasks                        | Créer une nouvelle tache                      |
     | PUT       | http://[hostname]/wsexec/tasks                        | Mettre à jour une tache                       |
-    | DELETE    | http://[hostname]/wsexec/tasks/[task_id]              | Stopper une tache                             |
     ---------------------------------------------------------------------------------------------------------------------
     | GET       | http://[hostname]/wsexec/instances                    | Récupérer la liste des instances déclarées    |
     | GET       | http://[hostname]/wsexec/instances/[instance_id]      | Récupérer une instance déclarée               |
@@ -77,11 +77,8 @@
     - mettre en place la chaine de service (Gunicorn, Nginx)
     - developper les tests unitaires
     - sécuriser la connexion : authentification https
-    - controler le contenu des champs des requetes POST - PUT - DELETE
 	- gérer les logs
 	- assurer la persistance des données (redis)
-	- gérer la suppression d'une tache (kill process paramiko)
-	- récuperer le code retour channel paramiko
 
 ## Commandes curl
 
@@ -91,12 +88,10 @@
     curl -u user:pass -i http://localhost:5000/wsexec/tasks/3
     
     curl -u user:pass -i -H "Content-Type: application/json" -X POST -d '{"name":"sleep 30", "tag":"essai", "instance":200, "script":"sleep 30", "user":"antoine"}' http://localhost:5000/wsexec/tasks
-    curl -u user:pass -i -H "Content-Type: application/json" -X POST -d '{"name":"sleep 30", "tag":"essai", "instance":200, "script":"ls -als", "user":"antoine"}' http://localhost:5000/wsexec/tasks
+    curl -u user:pass -i -H "Content-Type: application/json" -X POST -d '{"name":"ls", "tag":"essai", "instance":200, "script":"ls -als", "user":"antoine"}' http://localhost:5000/wsexec/tasks
     
     curl -u user:pass -i -H "Content-Type: application/json" -X PUT -d '{"rc":5}' http://localhost:5000/wsexec/tasks/2
     curl -u user:pass -i -H "Content-Type: application/json" -X PUT -d '{"stdout":"ok"}' http://localhost:5000/wsexec/tasks/2
-    
-    curl -u user:pass -i -H "Content-Type: application/json" -X DELETE http://localhost:5000/wsexec/tasks/2
 
 ### instances
     curl -u user:pass -i http://localhost:5000/wsexec/instances

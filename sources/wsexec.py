@@ -109,6 +109,7 @@ def task_request_check(request):
 def task_launch(task):
     monJob = job.myJob(task['id'])
     task['start'] = int(time.time())
+    task['state'] = "CURRENT"
     monJob.start()
     return task
 
@@ -166,7 +167,11 @@ def update_task(task_id):
         abort(400)
     if 'rc' in request.json and type(request.json['rc']) != int:
         abort(400)
-    if 'state' in request.json and type(request.json['state']) != unicode:
+    if 'state' in request.json and type(request.json['state']) != unicode and not (
+            request.json['state'] == "INIT" or
+            request.json['state'] == "CURRENT" or
+            request.json['state'] == "DONE" or
+            request.json['state'] == "ABORT"):
         abort(400)
     task[0]['start'] = request.json.get('start', task[0]['start'])
     task[0]['end'] = request.json.get('end', task[0]['end'])
@@ -176,6 +181,7 @@ def update_task(task_id):
     task[0]['state'] = request.json.get('state', task[0]['state'])
     return jsonify({'task': make_public_task(task[0])})
 
+"""
 @app.route('/wsexec/tasks/<int:task_id>', methods=['DELETE'])
 @auth.login_required
 def delete_task(task_id):
@@ -184,7 +190,7 @@ def delete_task(task_id):
         abort(404)
     tasks.remove(task[0])
     return jsonify({'result': True})
-
+"""
 # __________________________________ instance __________________________________
 
 def make_public_instance(instance):
@@ -244,7 +250,9 @@ def update_instance(instance_id):
         abort(400)
     if 'tag' in request.json and type(request.json['tag']) != unicode:
         abort(400)
-    if 'state' in request.json and type(request.json['state']) != unicode:
+    if 'state' in request.json and type(request.json['state']) != unicode and not (
+            request.json['state'] == "ACTIVE" or
+            request.json['state'] == "DEACTIVATE"):
         abort(400)
     instance[0]['ip'] = request.json.get('ip', instance[0]['ip'])
     instance[0]['tag'] = request.json.get('tag', instance[0]['tag'])
