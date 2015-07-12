@@ -1,0 +1,2 @@
+export WSEXEC_USER=user
+export WSEXEC_PASS=pass

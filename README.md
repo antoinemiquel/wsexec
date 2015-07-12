@@ -78,7 +78,6 @@
     - developper les tests unitaires
     - sécuriser la connexion : authentification https
 	- gérer les logs
-	- assurer la persistance des données (redis)
 
 ## Commandes curl
 

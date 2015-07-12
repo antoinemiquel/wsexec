@@ -5,10 +5,11 @@ import time
 import requests
 from requests.auth import HTTPBasicAuth
 import paramiko
+import os
 
 url = 'http://localhost:5000/wsexec/'
-username = "user"
-password = "pass"
+username = os.getenv('WSEXEC_USER')
+password = os.getenv('WSEXEC_PASS')
 
 class myJob (threading.Thread):
 
@@ -59,18 +60,17 @@ def exec_task(task, instance):
 
     chan = ssh.get_transport().open_session()
     chan.exec_command(cmd)
-    while True:
-        if chan.recv_ready():
-            stdout = chan.recv(64096).decode(encoding='UTF-8', errors='strict')
-        if chan.recv_stderr_ready():
-            stderr = chan.recv_stderr(64096).decode(encoding='UTF-8', errors='strict')
-        if chan.exit_status_ready():
-            rc = chan.recv_exit_status()
-            break
 
+    rc = chan.recv_exit_status()
+    if chan.recv_ready():
+        stdout = chan.recv(1601024)
+
+    if chan.recv_stderr_ready():
+        stderr = chan.recv_stderr(1601024)
+
+    stdout = stdout
+    stderr = stderr
     state = 'DONE'
-    ssh.close()
-
     return rc, state, stdout, stderr
 
 if __name__ == '__main__':

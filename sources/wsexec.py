@@ -4,14 +4,23 @@ from flask import Flask, jsonify, abort, request, make_response, url_for
 from flask.ext.httpauth import HTTPBasicAuth
 import job
 import time
+import os
+import redis
+import json
+
+pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
+r = redis.Redis(connection_pool=pool)
 
 app = Flask(__name__, static_url_path="")
 auth = HTTPBasicAuth()
+wsexec_user = os.getenv('WSEXEC_USER')
+wsexec_pass = os.getenv('WSEXEC_PASS')
+
 
 @auth.get_password
 def get_password(username):
-    if username == 'user':
-        return 'pass'
+    if username == wsexec_user:
+        return wsexec_pass
     return None
 
 @auth.error_handler
@@ -26,60 +35,6 @@ def not_found(error):
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
-
-# __________________________________ data __________________________________
-
-tasks = [
-    {
-        'id': 1,
-        'name': 'save_mongo',
-        'tag': 'dump mongo',
-        'start': 1436506743,
-        'end': 1436506790,
-        'instance': 501,
-        'script': '/home/debian/mongo_save.sh',
-        'user': 'debian',
-        'stdout': 'NOK',
-        'stderr': '',
-        'rc': '1',
-        'state': 'DONE'
-    },
-    {
-        'id': 2,
-        'name': 'save_mongo',
-        'tag': 'dump mongo',
-        'start': 1436506000,
-        'end': 1436506090,
-        'instance': 501,
-        'script': '/home/debian/mongo_save.sh',
-        'user': 'debian',
-        'stdout': 'ok',
-        'stderr': '',
-        'rc': '0',
-        'state': 'DONE'
-    }
-]
-
-instances = [
-    {
-        'id': 500,
-        'ip': '192.168.1.10',
-        'tag': 'mongo',
-        'state': 'ACTIVE'
-    },
-    {
-        'id': 501,
-        'ip': '192.168.1.11',
-        'tag': 'mongo',
-        'state': 'DEACTIVE'
-    },
-    {
-        'id': 200,
-        'ip': '127.0.0.1',
-        'tag': 'mon_pc',
-        'state': 'ACTIVE'
-    }
-]
 
 # __________________________________ tasks __________________________________
 
@@ -100,7 +55,7 @@ def task_request_check(request):
             or not 'script' in request.json \
             or not 'user' in request.json:
         abort(400)
-
+    instances = json.loads(r.get("instances").replace("'", "\""))
     instance = filter(lambda t: t['id'] == int(request.json['instance']), instances)
     if len(instance) == 0:
         abort(404)
@@ -110,17 +65,20 @@ def task_launch(task):
     monJob = job.myJob(task['id'])
     task['start'] = int(time.time())
     task['state'] = "CURRENT"
+
     monJob.start()
     return task
 
 @app.route('/wsexec/tasks', methods=['GET'])
 @auth.login_required
 def get_tasks():
+    tasks = json.loads(r.get("tasks").replace("'", "\""))
     return jsonify({'tasks': map(make_public_task, tasks)})
 
 @app.route('/wsexec/tasks/<int:task_id>', methods=['GET'])
 @auth.login_required
 def get_task(task_id):
+    tasks = json.loads(r.get("tasks").replace("'", "\""))
     task = filter(lambda t: t['id'] == task_id, tasks)
     if len(task) == 0:
         abort(404)
@@ -130,7 +88,7 @@ def get_task(task_id):
 @auth.login_required
 def create_task():
     task_request_check(request)
-
+    tasks = json.loads(r.get("tasks").replace("'", "\""))
     task = {
         'id': tasks[-1]['id'] + 1,
         'name': request.json['name'],
@@ -147,11 +105,13 @@ def create_task():
     }
     task = task_launch(task)
     tasks.append(task)
+    r.set("tasks", json.dumps(tasks))
     return jsonify({'task': make_public_task(task)}), 201
 
 @app.route('/wsexec/tasks/<int:task_id>', methods=['PUT'])
 @auth.login_required
 def update_task(task_id):
+    tasks = json.loads(r.get("tasks").replace("'", "\""))
     task = filter(lambda t: t['id'] == task_id, tasks)
     if len(task) == 0:
         abort(404)
@@ -179,16 +139,21 @@ def update_task(task_id):
     task[0]['stderr'] = request.json.get('stderr', task[0]['stderr'])
     task[0]['rc'] = request.json.get('rc', task[0]['rc'])
     task[0]['state'] = request.json.get('state', task[0]['state'])
+
+    r.set("tasks", json.dumps(tasks))
+
     return jsonify({'task': make_public_task(task[0])})
 
 """
 @app.route('/wsexec/tasks/<int:task_id>', methods=['DELETE'])
 @auth.login_required
 def delete_task(task_id):
+    tasks = json.loads(r.get("tasks").replace("'", "\""))
     task = filter(lambda t: t['id'] == task_id, tasks)
     if len(task) == 0:
         abort(404)
     tasks.remove(task[0])
+    r.set("tasks", json.dumps(tasks))
     return jsonify({'result': True})
 """
 # __________________________________ instance __________________________________
@@ -214,11 +179,13 @@ def instance_request_check(request):
 @app.route('/wsexec/instances', methods=['GET'])
 @auth.login_required
 def get_instances():
+    instances = json.loads(r.get("instances").replace("'", "\""))
     return jsonify({'instances': map(make_public_instance, instances)})
 
 @app.route('/wsexec/instances/<int:instance_id>', methods=['GET'])
 @auth.login_required
 def get_instance(instance_id):
+    instances = json.loads(r.get("instances").replace("'", "\""))
     instance = filter(lambda t: t['id'] == instance_id, instances)
     if len(instance) == 0:
         abort(404)
@@ -228,7 +195,7 @@ def get_instance(instance_id):
 @auth.login_required
 def create_instances():
     instance_request_check(request)
-
+    instances = json.loads(r.get("instances").replace("'", "\""))
     instance = {
         'id': instances[-1]['id'] + 1,
         'ip': request.json['ip'],
@@ -236,11 +203,13 @@ def create_instances():
         'state': request.json['state']
     }
     instances.append(instance)
+    r.set("instances", json.dumps(instances))
     return jsonify({'instance': make_public_instance(instance)}), 201
 
 @app.route('/wsexec/instances/<int:instance_id>', methods=['PUT'])
 @auth.login_required
 def update_instance(instance_id):
+    instances = json.loads(r.get("instances").replace("'", "\""))
     instance = filter(lambda t: t['id'] == instance_id, instances)
     if len(instance) == 0:
         abort(404)
@@ -257,15 +226,20 @@ def update_instance(instance_id):
     instance[0]['ip'] = request.json.get('ip', instance[0]['ip'])
     instance[0]['tag'] = request.json.get('tag', instance[0]['tag'])
     instance[0]['state'] = request.json.get('state', instance[0]['state'])
+
+    r.set("instances", json.dumps(instances))
+
     return jsonify({'task': make_public_instance(instance[0])})
 
 @app.route('/wsexec/instances/<int:instance_id>', methods=['DELETE'])
 @auth.login_required
 def delete_instance(instance_id):
+    instances = json.loads(r.get("instances").replace("'", "\""))
     instance = filter(lambda t: t['id'] == instance_id, instances)
     if len(instance) == 0:
         abort(404)
     instances.remove(instance[0])
+    r.set("instances", json.dumps(instances))
     return jsonify({'result': True})
 
 # __________________________________ main __________________________________
