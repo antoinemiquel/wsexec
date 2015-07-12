@@ -8,14 +8,22 @@ import os
 import redis
 import json
 
-pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
-r = redis.Redis(connection_pool=pool)
-
 app = Flask(__name__, static_url_path="")
 auth = HTTPBasicAuth()
 wsexec_user = os.getenv('WSEXEC_USER')
 wsexec_pass = os.getenv('WSEXEC_PASS')
 
+def init_db():
+    pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
+    return redis.Redis(connection_pool=pool)
+
+def get_json(clef):
+    conn = init_db()
+    return json.loads(conn.get(clef).replace("'", "\""))
+
+def set_json(clef, json_data):
+    conn = init_db()
+    conn.set(clef, json.dumps(json_data))
 
 @auth.get_password
 def get_password(username):
@@ -55,7 +63,7 @@ def task_request_check(request):
             or not 'script' in request.json \
             or not 'user' in request.json:
         abort(400)
-    instances = json.loads(r.get("instances").replace("'", "\""))
+    instances = get_json("instances")
     instance = filter(lambda t: t['id'] == int(request.json['instance']), instances)
     if len(instance) == 0:
         abort(404)
@@ -72,13 +80,13 @@ def task_launch(task):
 @app.route('/wsexec/tasks', methods=['GET'])
 @auth.login_required
 def get_tasks():
-    tasks = json.loads(r.get("tasks").replace("'", "\""))
+    tasks = get_json("tasks")
     return jsonify({'tasks': map(make_public_task, tasks)})
 
 @app.route('/wsexec/tasks/<int:task_id>', methods=['GET'])
 @auth.login_required
 def get_task(task_id):
-    tasks = json.loads(r.get("tasks").replace("'", "\""))
+    tasks = get_json("tasks")
     task = filter(lambda t: t['id'] == task_id, tasks)
     if len(task) == 0:
         abort(404)
@@ -88,7 +96,7 @@ def get_task(task_id):
 @auth.login_required
 def create_task():
     task_request_check(request)
-    tasks = json.loads(r.get("tasks").replace("'", "\""))
+    tasks = get_json("tasks")
     task = {
         'id': tasks[-1]['id'] + 1,
         'name': request.json['name'],
@@ -105,13 +113,14 @@ def create_task():
     }
     task = task_launch(task)
     tasks.append(task)
-    r.set("tasks", json.dumps(tasks))
+    set_json("tasks", tasks)
+
     return jsonify({'task': make_public_task(task)}), 201
 
 @app.route('/wsexec/tasks/<int:task_id>', methods=['PUT'])
 @auth.login_required
 def update_task(task_id):
-    tasks = json.loads(r.get("tasks").replace("'", "\""))
+    tasks = get_json("tasks")
     task = filter(lambda t: t['id'] == task_id, tasks)
     if len(task) == 0:
         abort(404)
@@ -140,7 +149,7 @@ def update_task(task_id):
     task[0]['rc'] = request.json.get('rc', task[0]['rc'])
     task[0]['state'] = request.json.get('state', task[0]['state'])
 
-    r.set("tasks", json.dumps(tasks))
+    set_json("tasks", tasks)
 
     return jsonify({'task': make_public_task(task[0])})
 
@@ -148,12 +157,12 @@ def update_task(task_id):
 @app.route('/wsexec/tasks/<int:task_id>', methods=['DELETE'])
 @auth.login_required
 def delete_task(task_id):
-    tasks = json.loads(r.get("tasks").replace("'", "\""))
+    tasks = get_json("tasks")
     task = filter(lambda t: t['id'] == task_id, tasks)
     if len(task) == 0:
         abort(404)
     tasks.remove(task[0])
-    r.set("tasks", json.dumps(tasks))
+    set_json("tasks", tasks)
     return jsonify({'result': True})
 """
 # __________________________________ instance __________________________________
@@ -179,13 +188,13 @@ def instance_request_check(request):
 @app.route('/wsexec/instances', methods=['GET'])
 @auth.login_required
 def get_instances():
-    instances = json.loads(r.get("instances").replace("'", "\""))
+    instances = get_json("instances")
     return jsonify({'instances': map(make_public_instance, instances)})
 
 @app.route('/wsexec/instances/<int:instance_id>', methods=['GET'])
 @auth.login_required
 def get_instance(instance_id):
-    instances = json.loads(r.get("instances").replace("'", "\""))
+    instances = get_json("instances")
     instance = filter(lambda t: t['id'] == instance_id, instances)
     if len(instance) == 0:
         abort(404)
@@ -195,7 +204,7 @@ def get_instance(instance_id):
 @auth.login_required
 def create_instances():
     instance_request_check(request)
-    instances = json.loads(r.get("instances").replace("'", "\""))
+    instances = get_json("instances")
     instance = {
         'id': instances[-1]['id'] + 1,
         'ip': request.json['ip'],
@@ -203,13 +212,13 @@ def create_instances():
         'state': request.json['state']
     }
     instances.append(instance)
-    r.set("instances", json.dumps(instances))
+    set_json("instances", instances)
     return jsonify({'instance': make_public_instance(instance)}), 201
 
 @app.route('/wsexec/instances/<int:instance_id>', methods=['PUT'])
 @auth.login_required
 def update_instance(instance_id):
-    instances = json.loads(r.get("instances").replace("'", "\""))
+    instances = get_json("instances")
     instance = filter(lambda t: t['id'] == instance_id, instances)
     if len(instance) == 0:
         abort(404)
@@ -227,19 +236,19 @@ def update_instance(instance_id):
     instance[0]['tag'] = request.json.get('tag', instance[0]['tag'])
     instance[0]['state'] = request.json.get('state', instance[0]['state'])
 
-    r.set("instances", json.dumps(instances))
+    set_json("instances", instances)
 
     return jsonify({'task': make_public_instance(instance[0])})
 
 @app.route('/wsexec/instances/<int:instance_id>', methods=['DELETE'])
 @auth.login_required
 def delete_instance(instance_id):
-    instances = json.loads(r.get("instances").replace("'", "\""))
+    instances = get_json("instances")
     instance = filter(lambda t: t['id'] == instance_id, instances)
     if len(instance) == 0:
         abort(404)
     instances.remove(instance[0])
-    r.set("instances", json.dumps(instances))
+    set_json("instances", instances)
     return jsonify({'result': True})
 
 # __________________________________ main __________________________________
