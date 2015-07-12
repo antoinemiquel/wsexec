@@ -3,19 +3,19 @@
 
 ## Requêtes
 
-| HTTP      | Method                                                | URI Action                                    |
----------------------------------------------------------------------------------------------------------------------
-| GET       | http://[hostname]/wsexec/tasks                        | Récupération de la liste des taches           |
-| GET       | http://[hostname]/wsexec/tasks/[task_id]              | Récupération d'une tache                      |
-| POST      | http://[hostname]/wsexec/tasks                        | Créer une nouvelle tache                      |
-| PUT       | http://[hostname]/wsexec/tasks                        | Mettre à jour une tache                       |
-| DELETE    | http://[hostname]/wsexec/tasks/[task_id]              | Stopper une tache                             |
----------------------------------------------------------------------------------------------------------------------
-| GET       | http://[hostname]/wsexec/instances                    | Récupérer la liste des instances déclarées    |
-| GET       | http://[hostname]/wsexec/instances/[instance_id]      | Récupérer une instance déclarée               |
-| POST      | http://[hostname]/wsexec/instances                    | Créer une nouvelle instance                   |
-| PUT       | http://[hostname]/wsexec/instances                    | Mettre à jour une instance                    |
-| DELETE    | http://[hostname]/wsexec/instances/[instance_id]      | Enlever une instance des déclarations         |
+    | HTTP      | Method                                                | URI Action                                    |
+    ---------------------------------------------------------------------------------------------------------------------
+    | GET       | http://[hostname]/wsexec/tasks                        | Récupération de la liste des taches           |
+    | GET       | http://[hostname]/wsexec/tasks/[task_id]              | Récupération d'une tache                      |
+    | POST      | http://[hostname]/wsexec/tasks                        | Créer une nouvelle tache                      |
+    | PUT       | http://[hostname]/wsexec/tasks                        | Mettre à jour une tache                       |
+    | DELETE    | http://[hostname]/wsexec/tasks/[task_id]              | Stopper une tache                             |
+    ---------------------------------------------------------------------------------------------------------------------
+    | GET       | http://[hostname]/wsexec/instances                    | Récupérer la liste des instances déclarées    |
+    | GET       | http://[hostname]/wsexec/instances/[instance_id]      | Récupérer une instance déclarée               |
+    | POST      | http://[hostname]/wsexec/instances                    | Créer une nouvelle instance                   |
+    | PUT       | http://[hostname]/wsexec/instances                    | Mettre à jour une instance                    |
+    | DELETE    | http://[hostname]/wsexec/instances/[instance_id]      | Enlever une instance des déclarations         |
 
 ## Structure de données
 
