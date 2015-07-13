@@ -77,7 +77,6 @@
     - mettre en place la chaine de service (Gunicorn, Nginx)
     - developper les tests unitaires
     - sécuriser la connexion : authentification https
-	- gérer les logs
 
 ## Commandes curl
 

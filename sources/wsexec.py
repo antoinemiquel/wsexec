@@ -7,6 +7,9 @@ import time
 import os
 import redis
 import json
+import logger
+
+LOGGER = logger.get_logger(__name__)
 
 app = Flask(__name__, static_url_path="")
 auth = HTTPBasicAuth()
@@ -14,16 +17,39 @@ wsexec_user = os.getenv('WSEXEC_USER')
 wsexec_pass = os.getenv('WSEXEC_PASS')
 
 def init_db():
-    pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
-    return redis.Redis(connection_pool=pool)
+    try:
+        pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
+        conn = redis.Redis(connection_pool=pool)
+    except redis.ConnectionError:
+        LOGGER.error("redis connect error")
+    else:
+        return conn
+
+def close_db(conn):
+    try:
+        conn.connection_pool.disconnect()
+    except redis.RedisError:
+        LOGGER.error("redis disconnect error")
 
 def get_json(clef):
     conn = init_db()
-    return json.loads(conn.get(clef).replace("'", "\""))
+    try:
+        result = json.loads(conn.get(clef).replace("'", "\""))
+    except redis.RedisError:
+        LOGGER.error("get data error")
+    else:
+        return result
+    finally:
+        close_db(conn)
 
 def set_json(clef, json_data):
     conn = init_db()
-    conn.set(clef, json.dumps(json_data))
+    try:
+        conn.set(clef, json.dumps(json_data))
+    except redis.RedisError:
+        LOGGER.error("set data error")
+    finally:
+        close_db(conn)
 
 @auth.get_password
 def get_password(username):
@@ -70,11 +96,10 @@ def task_request_check(request):
     return 0
 
 def task_launch(task):
-    monJob = job.myJob(task['id'])
+    job_launch = job.myJob(task['id'])
     task['start'] = int(time.time())
     task['state'] = "CURRENT"
-
-    monJob.start()
+    job_launch.start()
     return task
 
 @app.route('/wsexec/tasks', methods=['GET'])
@@ -153,7 +178,6 @@ def update_task(task_id):
 
     return jsonify({'task': make_public_task(task[0])})
 
-"""
 @app.route('/wsexec/tasks/<int:task_id>', methods=['DELETE'])
 @auth.login_required
 def delete_task(task_id):
@@ -164,7 +188,7 @@ def delete_task(task_id):
     tasks.remove(task[0])
     set_json("tasks", tasks)
     return jsonify({'result': True})
-"""
+
 # __________________________________ instance __________________________________
 
 def make_public_instance(instance):

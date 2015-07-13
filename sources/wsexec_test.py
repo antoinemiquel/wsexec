@@ -36,5 +36,15 @@ class WsexecTestCase(unittest.TestCase):
         nb_bdd = len(wsexec.get_json("instances"))
         self.assertEqual(nb_ws, nb_bdd)
 
+    def test_set_json(self):
+        wsexec.set_json("test", "valeur_test")
+        if wsexec.get_json("test") == "valeur_test":
+            rc = 0
+        else:
+            rc = 1
+        wsexec.init_db().delete("test")
+        self.assertEqual(rc, 0)
+
+
 if __name__ == '__main__':
     unittest.main()
