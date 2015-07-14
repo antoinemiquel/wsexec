@@ -139,6 +139,7 @@ def create_task():
     task = task_launch(task)
     tasks.append(task)
     set_json("tasks", tasks)
+    LOGGER.info(task)
 
     return jsonify({'task': make_public_task(task)}), 201
 
@@ -175,7 +176,7 @@ def update_task(task_id):
     task[0]['state'] = request.json.get('state', task[0]['state'])
 
     set_json("tasks", tasks)
-
+    LOGGER.info(task)
     return jsonify({'task': make_public_task(task[0])})
 
 @app.route('/wsexec/tasks/<int:task_id>', methods=['DELETE'])
@@ -187,6 +188,7 @@ def delete_task(task_id):
         abort(404)
     tasks.remove(task[0])
     set_json("tasks", tasks)
+    LOGGER.info(task)
     return jsonify({'result': True})
 
 # __________________________________ instance __________________________________
@@ -237,6 +239,7 @@ def create_instances():
     }
     instances.append(instance)
     set_json("instances", instances)
+    LOGGER.info(instance)
     return jsonify({'instance': make_public_instance(instance)}), 201
 
 @app.route('/wsexec/instances/<int:instance_id>', methods=['PUT'])
@@ -261,7 +264,7 @@ def update_instance(instance_id):
     instance[0]['state'] = request.json.get('state', instance[0]['state'])
 
     set_json("instances", instances)
-
+    LOGGER.info(instance)
     return jsonify({'task': make_public_instance(instance[0])})
 
 @app.route('/wsexec/instances/<int:instance_id>', methods=['DELETE'])
@@ -273,6 +276,7 @@ def delete_instance(instance_id):
         abort(404)
     instances.remove(instance[0])
     set_json("instances", instances)
+    LOGGER.info(instance)
     return jsonify({'result': True})
 
 # __________________________________ main __________________________________

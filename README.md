@@ -71,11 +71,10 @@
 
 ## Installation
 
-    pip install flask, Flask-HTTPAuth, requests, paramiko
+    pip install flask, Flask-HTTPAuth, requests, paramiko, redis
 
 ## A faire
     - mettre en place la chaine de service (Gunicorn, Nginx)
-    - developper les tests unitaires
     - sécuriser la connexion : authentification https
 
 ## Commandes curl
