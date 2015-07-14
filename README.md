@@ -101,9 +101,28 @@
     sudo rm /etc/nginx/sites-enabled/default
     sudo nginx -t
     sudo service nginx restart
-    
-## A faire
-    - sécuriser la connexion : authentification https
+
+### SSL et nginx (certificat auto-signé)
+    sudo apt-get install openssl
+    sudo mkdir /etc/nginx/cle_wsexec/
+    cd /etc/nginx/cle_wsexec/
+    sudo openssl genrsa -out server.key 1024
+    sudo openssl req -new -key server.key -out server.csr
+    sudo openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+    sudo vi /etc/nginx/sites-available/wsexec
+            server {
+               listen 443;
+               server_name 0.0.0.0;
+               ssl on;
+               ssl_certificate /etc/nginx/cle_wsexec/server.crt;
+               ssl_certificate_key /etc/nginx/cle_wsexec/server.key;
+               location / {
+               proxy_pass http://localhost:8000;
+               }
+            }
+    sudo rm /etc/nginx/sites-enabled/wsexec
+    sudo ln -s /etc/nginx/sites-available/wsexec_ssl /etc/nginx/sites-enabled/
+    sudo service nginx restart
 
 ## Commandes curl
 
@@ -128,3 +147,7 @@
     curl -u user:pass -i -H "Content-Type: application/json" -X PUT -d '{"ip":"127.0.0.1", "tag":"localhost", "state":"ACTIVE"}' http://localhost:5000/wsexec/instances/1
     
     curl -u user:pass -i -H "Content-Type: application/json" -X DELETE http://localhost:5000/wsexec/instances/1
+
+#### note
+        avec ssl, utiliser l'option "-k" pour permettre l'utilisation d'un certificat auto-signé, ex :
+                curl -k -u user:pass -i https://localhost/wsexec/instances
