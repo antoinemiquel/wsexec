@@ -70,11 +70,39 @@
 	- la connexion ssh avec clefs doit être fonctionnelle vers les instances à joindre
 
 ## Installation
-
-    pip install flask, Flask-HTTPAuth, requests, paramiko, redis
-
+### Code et environnement
+    cd ~
+    mkdir wsexec
+    git clone https://github.com/antoinemiquel/wsexec.git ~/wsexec
+    virtualenv wsexec
+    cd wsexec
+    source bin/activate
+    pip install flask Flask-HTTPAuth requests paramiko redis
+    
+### Gunicorn et nginx
+    cd ~/wsexec
+    source bin/activate
+    pip install gunicorn
+    source ~/wsexec/sources/EXPORTME.txt
+    gunicorn --workers 3 --bind localhost:8000 wsgi &
+    sudo apt-get install nginx
+    sudo vi /etc/nginx/sites-available/wsexec    
+            server {
+                listen 80;
+                server_name 0.0.0.0;
+            
+                location / {
+                    include proxy_params;
+                    proxy_pass http://localhost:8000;
+                }
+            }
+    
+    sudo ln -s /etc/nginx/sites-available/wsexec /etc/nginx/sites-enabled
+    sudo rm /etc/nginx/sites-enabled/default
+    sudo nginx -t
+    sudo service nginx restart
+    
 ## A faire
-    - mettre en place la chaine de service (Gunicorn, Nginx)
     - sécuriser la connexion : authentification https
 
 ## Commandes curl

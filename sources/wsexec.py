@@ -11,7 +11,7 @@ import logger
 
 LOGGER = logger.get_logger(__name__)
 
-app = Flask(__name__, static_url_path="")
+application = Flask(__name__, static_url_path="")
 auth = HTTPBasicAuth()
 wsexec_user = os.getenv('WSEXEC_USER')
 wsexec_pass = os.getenv('WSEXEC_PASS')
@@ -62,11 +62,11 @@ def unauthorized():
     return make_response(jsonify({'error': 'Unauthorized access'}), 403)
     # return 403 instead of 401 to prevent browsers from displaying the default auth dialog
 
-@app.errorhandler(400)
+@application.errorhandler(400)
 def not_found(error):
     return make_response(jsonify({'error': 'Bad request'}), 400)
 
-@app.errorhandler(404)
+@application.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
@@ -102,13 +102,13 @@ def task_launch(task):
     job_launch.start()
     return task
 
-@app.route('/wsexec/tasks', methods=['GET'])
+@application.route('/wsexec/tasks', methods=['GET'])
 @auth.login_required
 def get_tasks():
     tasks = get_json("tasks")
     return jsonify({'tasks': map(make_public_task, tasks)})
 
-@app.route('/wsexec/tasks/<int:task_id>', methods=['GET'])
+@application.route('/wsexec/tasks/<int:task_id>', methods=['GET'])
 @auth.login_required
 def get_task(task_id):
     tasks = get_json("tasks")
@@ -117,7 +117,7 @@ def get_task(task_id):
         abort(404)
     return jsonify({'task': make_public_task(task[0])})
 
-@app.route('/wsexec/tasks', methods=['POST'])
+@application.route('/wsexec/tasks', methods=['POST'])
 @auth.login_required
 def create_task():
     task_request_check(request)
@@ -143,7 +143,7 @@ def create_task():
 
     return jsonify({'task': make_public_task(task)}), 201
 
-@app.route('/wsexec/tasks/<int:task_id>', methods=['PUT'])
+@application.route('/wsexec/tasks/<int:task_id>', methods=['PUT'])
 @auth.login_required
 def update_task(task_id):
     tasks = get_json("tasks")
@@ -179,7 +179,7 @@ def update_task(task_id):
     LOGGER.info(task)
     return jsonify({'task': make_public_task(task[0])})
 
-@app.route('/wsexec/tasks/<int:task_id>', methods=['DELETE'])
+@application.route('/wsexec/tasks/<int:task_id>', methods=['DELETE'])
 @auth.login_required
 def delete_task(task_id):
     tasks = get_json("tasks")
@@ -211,13 +211,13 @@ def instance_request_check(request):
         abort(400)
     return 0
 
-@app.route('/wsexec/instances', methods=['GET'])
+@application.route('/wsexec/instances', methods=['GET'])
 @auth.login_required
 def get_instances():
     instances = get_json("instances")
     return jsonify({'instances': map(make_public_instance, instances)})
 
-@app.route('/wsexec/instances/<int:instance_id>', methods=['GET'])
+@application.route('/wsexec/instances/<int:instance_id>', methods=['GET'])
 @auth.login_required
 def get_instance(instance_id):
     instances = get_json("instances")
@@ -226,7 +226,7 @@ def get_instance(instance_id):
         abort(404)
     return jsonify({'instance': make_public_instance(instance[0])})
 
-@app.route('/wsexec/instances', methods=['POST'])
+@application.route('/wsexec/instances', methods=['POST'])
 @auth.login_required
 def create_instances():
     instance_request_check(request)
@@ -242,7 +242,7 @@ def create_instances():
     LOGGER.info(instance)
     return jsonify({'instance': make_public_instance(instance)}), 201
 
-@app.route('/wsexec/instances/<int:instance_id>', methods=['PUT'])
+@application.route('/wsexec/instances/<int:instance_id>', methods=['PUT'])
 @auth.login_required
 def update_instance(instance_id):
     instances = get_json("instances")
@@ -267,7 +267,7 @@ def update_instance(instance_id):
     LOGGER.info(instance)
     return jsonify({'task': make_public_instance(instance[0])})
 
-@app.route('/wsexec/instances/<int:instance_id>', methods=['DELETE'])
+@application.route('/wsexec/instances/<int:instance_id>', methods=['DELETE'])
 @auth.login_required
 def delete_instance(instance_id):
     instances = get_json("instances")
@@ -282,4 +282,4 @@ def delete_instance(instance_id):
 # __________________________________ main __________________________________
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    application.run(debug=True)
