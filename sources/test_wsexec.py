@@ -10,32 +10,24 @@ import wsexec
 import init_redis
 
 
-def simple_task_launch(task):
-    return task
-
 class WsexecTestCase(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         pool = redis.ConnectionPool(host='localhost', port=6379, db=1)
-        cls.r = redis.Redis(connection_pool=pool)
+        self.r = redis.Redis(connection_pool=pool)
+        init_redis.init_db(1)
 
         wsexec.application.config['TESTING'] = True
         wsexec.BDD_ID = 1
-        cls.app = wsexec.application.test_client()
+        self.app = wsexec.application.test_client()
 
-        cls.url = 'http://localhost:5000/wsexec/'
-        cls.username = os.getenv('WSEXEC_USER')
-        cls.password = os.getenv('WSEXEC_PASS')
-        cls.headers = {'Authorization': 'Basic ' + b64encode("{0}:{1}".format(cls.username, cls.password))}
-        cls.LOGGER = logger.get_logger(__name__)
+        self.username = os.getenv('WSEXEC_USER')
+        self.password = os.getenv('WSEXEC_PASS')
+        self.headers = {'Authorization': 'Basic ' + b64encode("{0}:{1}".format(self.username, self.password))}
+        self.LOGGER = logger.get_logger(__name__)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.r.connection_pool.disconnect()
-
-    def setUp(self):
-        init_redis.init_db(1)
+    def tearDown(self):
+        self.r.connection_pool.disconnect()
 
     def test_get_tasks(self):
         rv = json.loads(self.app.get('/wsexec/tasks', headers=self.headers).data)["tasks"]
@@ -81,7 +73,6 @@ class WsexecTestCase(unittest.TestCase):
         self.assertEqual(rv['ip'], '127.0.0.1')
         self.assertEqual(rv['tag'], 'local')
         self.assertEqual(rv['state'], 'ACTIVE')
-
 
 if __name__ == '__main__':
     unittest.main()

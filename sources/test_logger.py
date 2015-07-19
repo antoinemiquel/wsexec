@@ -1,7 +1,7 @@
 import unittest
-from logger import get_logger
+import logger
 
-logger = get_logger(__name__)
+logger = logger.get_logger(__name__)
 
 class TestLogger(unittest.TestCase):
     def test_logger(self):
