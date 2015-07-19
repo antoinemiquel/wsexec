@@ -2,7 +2,7 @@ __author__ = 'antoine'
 
 import redis
 
-def init_db():
+def init_db(bdd_id):
     # __________________________________ data __________________________________
 
     tasks = [
@@ -12,7 +12,7 @@ def init_db():
             'tag': 'dump mongo',
             'start': 1436506743,
             'end': 1436506790,
-            'instance': 501,
+            'instance': 200,
             'script': '/home/debian/mongo_save.sh',
             'user': 'debian',
             'stdout': 'NOK',
@@ -26,7 +26,7 @@ def init_db():
             'tag': 'dump mongo',
             'start': 1436506000,
             'end': 1436506090,
-            'instance': 501,
+            'instance': 200,
             'script': '/home/debian/mongo_save.sh',
             'user': 'debian',
             'stdout': 'ok',
@@ -45,7 +45,7 @@ def init_db():
         }
     ]
 
-    pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
+    pool = redis.ConnectionPool(host='localhost', port=6379, db=bdd_id)
     r = redis.Redis(connection_pool=pool)
 
     r.flushdb()
@@ -55,4 +55,4 @@ def init_db():
 # __________________________________ main __________________________________
 
 if __name__ == '__main__':
-    init_db()
+    init_db(0)

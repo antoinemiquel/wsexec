@@ -15,10 +15,11 @@ application = Flask(__name__, static_url_path="")
 auth = HTTPBasicAuth()
 WSEXEC_USER = os.getenv('WSEXEC_USER')
 WSEXEC_PASS = os.getenv('WSEXEC_PASS')
+BDD_ID = 0
 
-def init_db():
+def init_db(bdd_id):
     try:
-        pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
+        pool = redis.ConnectionPool(host='localhost', port=6379, db=bdd_id)
         conn = redis.Redis(connection_pool=pool)
     except Exception as e:
         LOGGER.error("redis connect error : %s %s" % (e.message, e.args))
@@ -34,7 +35,7 @@ def close_db(conn):
         raise e
 
 def get_json(clef):
-    conn = init_db()
+    conn = init_db(BDD_ID)
     try:
         result = json.loads(conn.get(clef).replace("'", '"'))
     except Exception as e:
@@ -46,7 +47,7 @@ def get_json(clef):
         close_db(conn)
 
 def set_json(clef, json_data):
-    conn = init_db()
+    conn = init_db(BDD_ID)
     try:
         conn.set(clef, json.dumps(json_data))
     except Exception as e:

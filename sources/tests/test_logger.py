@@ -1,5 +1,3 @@
-__author__ = 'antoine'
-
 import unittest
 from logger import get_logger
 
