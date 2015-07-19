@@ -53,7 +53,7 @@
             'user': 'debian',
             'stdout': 'NOK',
             'stderr': '',
-            'rc': '1',
+            'rc': 1,
             'state': 'DONE'
         }]
 

@@ -17,7 +17,7 @@ def init_db():
             'user': 'debian',
             'stdout': 'NOK',
             'stderr': '',
-            'rc': '1',
+            'rc': 1,
             'state': 'DONE'
         },
         {
@@ -31,28 +31,16 @@ def init_db():
             'user': 'debian',
             'stdout': 'ok',
             'stderr': '',
-            'rc': '0',
+            'rc': 0,
             'state': 'DONE'
         }
     ]
 
     instances = [
         {
-            'id': 500,
-            'ip': '192.168.1.10',
-            'tag': 'mongo',
-            'state': 'ACTIVE'
-        },
-        {
-            'id': 501,
-            'ip': '192.168.1.11',
-            'tag': 'mongo',
-            'state': 'DEACTIVE'
-        },
-        {
             'id': 200,
             'ip': '127.0.0.1',
-            'tag': 'mon_pc',
+            'tag': 'local',
             'state': 'ACTIVE'
         }
     ]

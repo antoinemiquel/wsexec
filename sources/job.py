@@ -1,17 +1,17 @@
-__author__ = 'antoine'
-
-import threading
+import os
 import time
+import threading
+
 import requests
 from requests.auth import HTTPBasicAuth
 import paramiko
-import os
+
 import logger
 
 LOGGER = logger.get_logger(__name__)
-url = 'http://localhost:5000/wsexec/'
-username = os.getenv('WSEXEC_USER')
-password = os.getenv('WSEXEC_PASS')
+URL = 'http://localhost:5000/wsexec/'
+USERNAME = os.getenv('WSEXEC_USER')
+PASSWORD = os.getenv('WSEXEC_PASS')
 
 class myJob (threading.Thread):
 
@@ -24,34 +24,43 @@ class myJob (threading.Thread):
         instance = get_instance(task['instance'])
         LOGGER.info("run task id %s" % str(self.id))
 
-        rc, state, stdout, stderr = exec_task(task, instance)
-
-        ts = time.time()
-        data = {"end": int(ts), "rc": rc, "stdout": stdout, "stderr": stderr, "state": state}
-        update_task(self.id, data)
-        LOGGER.info("end task id %s" % str(self.id))
+        try:
+            rc, state, stdout, stderr = exec_task(task, instance)
+        except Exception as e:
+            ts = time.time()
+            data = {"end": int(ts), "rc": 8000, "stdout": '', "stderr": "execution error", "state": "ABORT"}
+            update_task(self.id, data)
+            LOGGER.warning("exec_task error : %s %s" % (e.message, e.args))
+        else:
+            ts = time.time()
+            data = {"end": int(ts), "rc": rc, "stdout": stdout, "stderr": stderr, "state": state}
+            update_task(self.id, data)
+            LOGGER.info("end task id %s" % str(self.id))
 
 def get_task(id):
     try:
-        r = requests.get(url + "tasks/" + str(id), auth=HTTPBasicAuth(username, password))
-    except:
-        LOGGER.error("get task error")
+        r = requests.get(URL + "tasks/%s" % str(id), auth=HTTPBasicAuth(USERNAME, PASSWORD))
+    except Exception as e:
+        LOGGER.error("get task error : %s %s" % (e.message, e.args))
+        raise e
     else:
         return r.json()['task']
 
 def get_instance(id):
     try:
-        r = requests.get(url + "instances/" + str(id), auth=HTTPBasicAuth(username, password))
-    except:
-        LOGGER.error("get instance error")
+        r = requests.get(URL + "instances/%s" % str(id), auth=HTTPBasicAuth(USERNAME, PASSWORD))
+    except Exception as e:
+        LOGGER.error("get instance error: %s %s" % (e.message, e.args))
+        raise e
     else:
         return r.json()['instance']
 
 def update_task(id, data):
     try:
-        r = requests.put(url + "tasks/" + str(id), json=data, auth=HTTPBasicAuth(username, password))
-    except:
-        LOGGER.error("put instance error")
+        r = requests.put(URL + "tasks/%s" % str(id), json=data, auth=HTTPBasicAuth(USERNAME, PASSWORD))
+    except Exception as e:
+        LOGGER.error("put instance error: %s %s" % (e.message, e.args))
+        raise e
     else:
         return r.json()['task']
 
@@ -66,24 +75,25 @@ def exec_task(task, instance):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host, username=user)
         LOGGER.info("Connected to %s" % host)
-    except paramiko.AuthenticationException:
-        LOGGER.info("Authentication failed when connecting to %s" % host)
-    except:
-        LOGGER.info("Could not SSH to %s, waiting for it to start" % host)
+    except paramiko.AuthenticationException as e:
+        LOGGER.warning("Authentication failed when connecting to %s : %s %s" % (host, e.message, e.args))
+        raise e
+    except Exception as e:
+        LOGGER.warning("Could not SSH to %s, waiting for it to start : %s %s" % (host, e.message, e.args))
+        raise e
 
     try:
         chan = ssh.get_transport().open_session()
         chan.exec_command(cmd)
-    except:
-        LOGGER.info("exec_command error : %s" % cmd)
+    except Exception as e:
+        LOGGER.warning("exec_command error %s : %s %s" % (cmd, e.message, e.args))
+        return e
     else:
         rc = chan.recv_exit_status()
         if chan.recv_ready():
             stdout = chan.recv(1601024)
         if chan.recv_stderr_ready():
             stderr = chan.recv_stderr(1601024)
-        stdout = stdout
-        stderr = stderr
         state = 'DONE'
         return rc, state, stdout, stderr
 

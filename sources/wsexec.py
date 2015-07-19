@@ -1,42 +1,45 @@
-__author__ = 'antoine'
+import time
+import os
 
 from flask import Flask, jsonify, abort, request, make_response, url_for
 from flask.ext.httpauth import HTTPBasicAuth
-import job
-import time
-import os
 import redis
 import json
+
+import job
 import logger
 
 LOGGER = logger.get_logger(__name__)
 
 application = Flask(__name__, static_url_path="")
 auth = HTTPBasicAuth()
-wsexec_user = os.getenv('WSEXEC_USER')
-wsexec_pass = os.getenv('WSEXEC_PASS')
+WSEXEC_USER = os.getenv('WSEXEC_USER')
+WSEXEC_PASS = os.getenv('WSEXEC_PASS')
 
 def init_db():
     try:
         pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
         conn = redis.Redis(connection_pool=pool)
-    except redis.ConnectionError:
-        LOGGER.error("redis connect error")
+    except Exception as e:
+        LOGGER.error("redis connect error : %s %s" % (e.message, e.args))
+        raise e
     else:
         return conn
 
 def close_db(conn):
     try:
         conn.connection_pool.disconnect()
-    except redis.RedisError:
-        LOGGER.error("redis disconnect error")
+    except Exception as e:
+        LOGGER.error("redis disconnect error : %s %s" % (e.message, e.args))
+        raise e
 
 def get_json(clef):
     conn = init_db()
     try:
-        result = json.loads(conn.get(clef).replace("'", "\""))
-    except redis.RedisError:
-        LOGGER.error("get data error")
+        result = json.loads(conn.get(clef).replace("'", '"'))
+    except Exception as e:
+        LOGGER.error("get data error : %s %s" % (e.message, e.args))
+        raise e
     else:
         return result
     finally:
@@ -46,15 +49,16 @@ def set_json(clef, json_data):
     conn = init_db()
     try:
         conn.set(clef, json.dumps(json_data))
-    except redis.RedisError:
-        LOGGER.error("set data error")
+    except Exception as e:
+        LOGGER.error("set data error : %s %s" % (e.message, e.args))
+        raise e
     finally:
         close_db(conn)
 
 @auth.get_password
 def get_password(username):
-    if username == wsexec_user:
-        return wsexec_pass
+    if username == WSEXEC_USER:
+        return WSEXEC_PASS
     return None
 
 @auth.error_handler
